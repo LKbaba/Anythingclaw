@@ -14,3 +14,6 @@ desktop.ini
 *.swo
 /.claude/skills
 /CCimages
+
+# Claude Code 配置（不上传到远程仓库）
+CLAUDE.md
