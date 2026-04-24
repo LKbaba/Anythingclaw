@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <title>Anythingclaw · 画板</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <style>
+    /* ========== 基础变量 ========== */
+    :root {
+      --bg: #f5f5f4;
+      --surface: #ffffff;
+      --text: #1a1a1a;
+      --text-secondary: #555;
+      --text-muted: #888;
+      --border: #e8e8e6;
+      --accent: #1a1a1a;
+      --accent-light: #f0efed;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-md: 0 8px 30px rgba(0,0,0,0.08);
+      --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
+      /* 间距系统 */
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 12px;
+      --space-base: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      --space-3xl: 64px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #111110;
+      --surface: #1c1c1a;
+      --text: #ececea;
+      --text-secondary: #a0a09a;
+      --text-muted: #706f6a;
+      --border: #2c2c28;
+      --accent: #ececea;
+      --accent-light: #252522;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.4);
+      --shadow-md: 0 8px 30px rgba(0,0,0,0.4);
+      --shadow-lg: 0 12px 40px rgba(0,0,0,0.5);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* 自定义滚动条 */
+    * { scrollbar-width: thin; scrollbar-color: var(--text-muted) transparent; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      min-height: 100vh;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* ========== 顶部栏 ========== */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: color-mix(in srgb, var(--surface) 85%, transparent);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(16px) saturate(1.2);
+      -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    }
+
+    .header-inner {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 20px var(--space-2xl);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-lg);
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .logo small {
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-left: var(--space-md);
+      font-size: 13px;
+      letter-spacing: 0;
+    }
+
+    .meta-stats {
+      display: flex;
+      gap: var(--space-lg);
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .meta-stats strong {
+      color: var(--text);
+      font-weight: 600;
+      margin-right: var(--space-xs);
+    }
+
+    .fetch-mode-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    .fetch-mode-badge.playwright {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .fetch-mode-badge.webfetch {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    [data-theme="dark"] .fetch-mode-badge.playwright {
+      background: #1e3a5f;
+      color: #93c5fd;
+    }
+
+    [data-theme="dark"] .fetch-mode-badge.webfetch {
+      background: #422006;
+      color: #fcd34d;
+    }
+
+    .controls {
+      display: flex;
+      gap: var(--space-sm);
+    }
+
+    .btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      color: var(--text);
+      border-color: var(--text-muted);
+      background: var(--accent-light);
+    }
+
+    /* ========== 主内容 ========== */
+    main {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: var(--space-2xl);
+    }
+
+    /* ========== 瀑布流 ========== */
+    .masonry {
+      column-count: 4;
+      column-gap: var(--space-lg);
+    }
+
+    @media (max-width: 1280px) { .masonry { column-count: 3; } }
+    @media (max-width: 880px)  { .masonry { column-count: 2; } }
+    @media (max-width: 540px)  { .masonry { column-count: 1; } }
+
+    /* ========== 卡片 ========== */
+    .card {
+      break-inside: avoid;
+      margin-bottom: var(--space-lg);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: color-mix(in srgb, var(--border) 50%, var(--text-muted));
+    }
+
+    .card-image {
+      width: 100%;
+      display: block;
+      background: var(--accent-light);
+      object-fit: cover;
+    }
+
+    .card-image-placeholder {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      background: var(--accent-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    .card-domain {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: var(--space-sm);
+    }
+
+    .card-domain img {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.35;
+      margin-bottom: var(--space-sm);
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .card-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* ========== 建筑信息栏 ========== */
+    .card-arch-info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: var(--space-md);
+    }
+
+    .arch-info-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      background: var(--accent-light);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .arch-info-item .label {
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 10px;
+    }
+
+    .arch-info-item .value {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* ========== 标签 ========== */
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: var(--space-md);
+    }
+
+    .tag {
+      font-size: 12px;
+      padding: 3px 10px;
+      background: var(--accent-light);
+      border: none;
+      border-radius: 999px;
+      color: var(--text-secondary);
+      letter-spacing: 0.01em;
+    }
+
+    /* ========== 材料标签 ========== */
+    .card-materials {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: var(--space-sm);
+    }
+
+    .material-tag {
+      font-size: 12px;
+      padding: 3px 10px;
+      background: oklch(0.95 0.03 150);
+      border: none;
+      border-radius: 999px;
+      color: oklch(0.40 0.12 150);
+      font-weight: 500;
+    }
+
+    [data-theme="dark"] .material-tag {
+      background: oklch(0.22 0.04 150);
+      color: oklch(0.75 0.12 150);
+    }
+
+    /* ========== 卡片底部 ========== */
+    .card-footer {
+      padding: var(--space-md) 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .card-footer .fetch-mode-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      opacity: 0.7;
+    }
+
+    /* ========== 失败区域 ========== */
+    .failed-section {
+      margin-top: var(--space-3xl);
+      padding-top: var(--space-xl);
+      border-top: 1px solid var(--border);
+    }
+
+    .failed-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: var(--space-base);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .failed-list {
+      display: grid;
+      gap: var(--space-sm);
+    }
+
+    .failed-item {
+      background: var(--accent-light);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: var(--space-base) 20px;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: border-color 0.2s ease;
+    }
+
+    .failed-item:hover {
+      border-color: var(--text-muted);
+    }
+
+    .failed-item a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      word-break: break-all;
+      font-size: 13px;
+    }
+
+    .failed-item a:hover { text-decoration: underline; color: var(--text); }
+
+    .failed-reason {
+      color: oklch(0.55 0.15 25);
+      font-size: 13px;
+    }
+
+    [data-theme="dark"] .failed-reason {
+      color: oklch(0.72 0.14 25);
+    }
+
+    /* ========== 空状态 ========== */
+    .empty {
+      text-align: center;
+      padding: 96px var(--space-lg);
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+
+    /* ========== 页脚 ========== */
+    footer {
+      text-align: center;
+      padding: var(--space-3xl) var(--space-lg) var(--space-xl);
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        Anythingclaw
+        <small id="meta-timestamp"></small>
+      </div>
+      <div class="meta-stats">
+        <span><strong id="stat-total">0</strong>总计</span>
+        <span><strong id="stat-success">0</strong>成功</span>
+        <span><strong id="stat-failed">0</strong>失败</span>
+        <span id="meta-mode"></span>
+      </div>
+      <div class="controls">
+        <button class="btn" onclick="toggleTheme()">切换主题</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="masonry" id="gallery"></div>
+    <div class="failed-section" id="failed-section" style="display:none;">
+      <div class="failed-title">未能抓取</div>
+      <div class="failed-list" id="failed-list"></div>
+    </div>
+  </main>
+
+  <footer>
+    Generated by Anythingclaw · 点击卡片跳转至原页面
+  </footer>
+
+  <!-- 数据注入点：Agent 把 JSON 放在 script[type=application/json] 中，避免引号转义问题 -->
+  <script type="application/json" id="gallery-data">__GALLERY_DATA__</script>
+  <script type="application/json" id="meta-data">__META_DATA__</script>
+
+  <script>
+    // ========== 从安全容器中读取数据 ==========
+    const GALLERY_DATA = JSON.parse(document.getElementById('gallery-data').textContent);
+    const META_DATA = JSON.parse(document.getElementById('meta-data').textContent);
+
+    // ========== 工具函数 ==========
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      const div = document.createElement('div');
+      div.textContent = String(text);
+      return div.innerHTML;
+    }
+
+    // ========== 渲染卡片 ==========
+    function renderCard(item) {
+      // 图片：优先 hero_image，其次 screenshot，最后占位符
+      let imageHtml;
+      if (item.hero_image && item.hero_image.length > 0) {
+        imageHtml = `<img class="card-image" src="${escapeHtml(item.hero_image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\\'card-image-placeholder\\'>图片无法加载</div>'">`;
+      } else if (item.screenshot && item.screenshot.length > 0) {
+        imageHtml = `<img class="card-image" src="${escapeHtml(item.screenshot)}" alt="页面截图" loading="lazy">`;
+      } else {
+        imageHtml = `<div class="card-image-placeholder">无封面</div>`;
+      }
+
+      const faviconHtml = item.favicon
+        ? `<img src="${escapeHtml(item.favicon)}" alt="" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
+        : '';
+
+      // 标签
+      const tagsHtml = (item.tags && item.tags.length > 0)
+        ? `<div class="card-tags">${item.tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>`
+        : '';
+
+      // 材料标签
+      const materialsHtml = (item.materials && item.materials.length > 0)
+        ? `<div class="card-materials">${item.materials.map(m => `<span class="material-tag">${escapeHtml(m)}</span>`).join('')}</div>`
+        : '';
+
+      // 描述
+      const descHtml = item.description
+        ? `<p class="card-desc">${escapeHtml(item.description)}</p>`
+        : '';
+
+      // 建筑信息栏（不使用 emoji，用文字标签代替）
+      const archInfoParts = [];
+      if (item.project_type) archInfoParts.push(`<span class="arch-info-item"><span class="value">${escapeHtml(item.project_type)}</span></span>`);
+      if (item.location) archInfoParts.push(`<span class="arch-info-item"><span class="label">LOC</span><span class="value">${escapeHtml(item.location)}</span></span>`);
+      if (item.architect) archInfoParts.push(`<span class="arch-info-item"><span class="label">BY</span><span class="value">${escapeHtml(item.architect)}</span></span>`);
+      if (item.year) archInfoParts.push(`<span class="arch-info-item"><span class="value">${escapeHtml(item.year)}</span></span>`);
+      const archInfoHtml = archInfoParts.length > 0
+        ? `<div class="card-arch-info">${archInfoParts.join('')}</div>`
+        : '';
+
+      const dateHtml = item.published_date ? escapeHtml(item.published_date) : '';
+      const authorHtml = item.author ? escapeHtml(item.author) : '';
+
+      // 抓取模式标识
+      const modeHtml = item.fetch_mode
+        ? `<span class="fetch-mode-badge ${item.fetch_mode === 'agent-browser' ? 'playwright' : 'webfetch'}">${item.fetch_mode === 'agent-browser' ? 'Browser' : 'WebFetch'}</span>`
+        : '';
+
+      return `
+        <article class="card" onclick="window.open('${escapeHtml(item.url)}', '_blank')">
+          ${imageHtml}
+          <div class="card-body">
+            <div class="card-domain">
+              ${faviconHtml}
+              <span>${escapeHtml(item.domain || '')}</span>
+            </div>
+            <h3 class="card-title">${escapeHtml(item.title || '无标题')}</h3>
+            ${descHtml}
+            ${archInfoHtml}
+            ${tagsHtml}
+            ${materialsHtml}
+          </div>
+          <div class="card-footer">
+            <span>${authorHtml}</span>
+            <span style="display:flex;align-items:center;gap:6px;">
+              ${modeHtml}
+              <span>${dateHtml}</span>
+            </span>
+          </div>
+        </article>
+      `;
+    }
+
+    // ========== 渲染失败项 ==========
+    function renderFailed(item) {
+      const modeHtml = item.fetch_mode
+        ? `<span class="fetch-mode-badge ${item.fetch_mode === 'agent-browser' ? 'playwright' : 'webfetch'}" style="font-size:10px;">${item.fetch_mode === 'agent-browser' ? 'Browser' : 'WebFetch'}</span>`
+        : '';
+      return `
+        <div class="failed-item">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener">${escapeHtml(item.url)}</a>
+            ${modeHtml}
+          </div>
+          <span class="failed-reason">${escapeHtml(item.error || '未知错误')}</span>
+        </div>
+      `;
+    }
+
+    // ========== 主渲染 ==========
+    function render() {
+      const success = GALLERY_DATA.filter(x => x.status === 'success');
+      const failed = GALLERY_DATA.filter(x => x.status === 'failed');
+
+      // 顶部统计
+      document.getElementById('stat-total').textContent = GALLERY_DATA.length;
+      document.getElementById('stat-success').textContent = success.length;
+      document.getElementById('stat-failed').textContent = failed.length;
+
+      if (META_DATA && META_DATA.timestamp) {
+        document.getElementById('meta-timestamp').textContent = META_DATA.timestamp;
+      }
+
+      // 抓取模式显示
+      if (META_DATA && META_DATA.fetch_mode) {
+        const modeEl = document.getElementById('meta-mode');
+        const cls = META_DATA.fetch_mode === 'agent-browser' ? 'playwright' : 'webfetch';
+        const label = META_DATA.fetch_mode === 'agent-browser' ? 'Browser' : 'WebFetch';
+        modeEl.innerHTML = `<span class="fetch-mode-badge ${cls}">${label}</span>`;
+      }
+
+      // 成功卡片
+      const gallery = document.getElementById('gallery');
+      if (success.length === 0) {
+        gallery.innerHTML = '<div class="empty">没有成功抓取到任何页面</div>';
+      } else {
+        gallery.innerHTML = success.map(renderCard).join('');
+      }
+
+      // 失败列表
+      if (failed.length > 0) {
+        document.getElementById('failed-section').style.display = 'block';
+        document.getElementById('failed-list').innerHTML = failed.map(renderFailed).join('');
+      }
+    }
+
+    // ========== 主题切换 ==========
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('anythingclaw-theme', next);
+    }
+
+    // 启动时恢复主题
+    (function initTheme() {
+      const saved = localStorage.getItem('anythingclaw-theme');
+      if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+      } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+
+    render();
+  </script>
+</body>
+</html>
